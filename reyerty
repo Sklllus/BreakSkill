@@ -269,7 +269,7 @@ do
 			pages = {}
 		}, library)
 	end
-	function page:NewPage(library, title, icon)
+	function page:new(library, title, icon)
 		local button = utility:Create("TextButton", {
 			Name = title,
 			Parent = library.pagesContainer,
@@ -333,7 +333,7 @@ do
 			sections = {}
 		}, page)
 	end
-	function section:NewSection(page, title)
+	function section:new(page, title)
 		local container = utility:Create("ImageLabel", {
 			Name = title,
 			Parent = page.container,
@@ -382,7 +382,7 @@ do
 		}, section)
 	end
 	function library:CreatePage(...)
-		local page = page:NewPage(self, ...)
+		local page = page:new(self, ...)
 		local button = page.button
 		table.insert(self.pages, page)
 		button.MouseButton1Click:Connect(function()
@@ -391,9 +391,54 @@ do
 		return page
 	end
 	function page:CreateSection(...)
-		local section = section:NewSection(self, ...)
+		local section = section:new(self, ...)
 		table.insert(self.sections, section)
 		return section
+	end
+	function library:setTheme(theme, color3)
+		themes[theme] = color3
+		
+		for property, objects in pairs(objects[theme]) do
+			for i, object in pairs(objects) do
+				if not object.Parent or (object.Name == "Button" and object.Parent.Name == "ColorPicker") then
+					objects[i] = nil
+				else
+					object[property] = color3
+				end
+			end
+		end
+	end
+	function library:toggle()
+		if self.toggling then
+			return
+		end
+		self.toggling = true
+		local container = self.container.Main
+		local topbar = container.TopBar
+		
+		if self.position then
+			utility:Tween(container, {
+				Size = UDim2.new(0, 511, 0, 428),
+				Position = self.position
+			}, 0.2)
+			wait(0.2)
+			utility:Tween(topbar, {Size = UDim2.new(1, 0, 0, 38)}, 0.2)
+			wait(0.2)
+			container.ClipsDescendants = false
+			self.position = nil
+		else
+			self.position = container.Position
+			container.ClipsDescendants = true
+			utility:Tween(topbar, {Size = UDim2.new(1, 0, 1, 0)}, 0.2)
+			wait(0.2)
+			
+			utility:Tween(container, {
+				Size = UDim2.new(0, 511, 0, 0),
+				Position = self.position + UDim2.new(0, 0, 0, 428)
+			}, 0.2)
+			wait(0.2)
+		end
+		self.toggling = false
 	end
 	function library:SelectPage(page, toggle)
 		if toggle and self.focusedPage == page then
