@@ -269,7 +269,7 @@ do
 			pages = {}
 		}, library)
 	end
-	function page:new(library, title, icon)
+	function page:NewPage(library, title, icon)
 		local button = utility:Create("TextButton", {
 			Name = title,
 			Parent = library.pagesContainer,
@@ -333,7 +333,7 @@ do
 			sections = {}
 		}, page)
 	end
-	function section:new(page, title)
+	function section:NewSection(page, title)
 		local container = utility:Create("ImageLabel", {
 			Name = title,
 			Parent = page.container,
@@ -391,7 +391,7 @@ do
 		return page
 	end
 	function page:CreateSection(...)
-		local section = section.new(self, ...)
+		local section = section:new(self, ...)
 		table.insert(self.sections, section)
 		return section
 	end
