@@ -381,6 +381,20 @@ do
 			lists = {}
 		}, section)
 	end
+	function library:CreatePage(...)
+		local page = page:new(self, ...)
+		local button = page.button
+		table.insert(self.pages, page)
+		button.MouseButton1Click:Connect(function()
+			self:SelectPage(page, true)
+		end)
+		return page
+	end
+	function page:CreateSection(...)
+		local section = section.new(self, ...)
+		table.insert(self.sections, section)
+		return section
+	end
 	function library:SelectPage(page, toggle)
 		if toggle and self.focusedPage == page then
 			return
