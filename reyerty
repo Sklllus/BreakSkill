@@ -382,7 +382,7 @@ do
 		}, section)
 	end
 	function library:CreatePage(...)
-		local page = page:new(self, ...)
+		local page = page:NewPage(self, ...)
 		local button = page.button
 		table.insert(self.pages, page)
 		button.MouseButton1Click:Connect(function()
@@ -391,7 +391,7 @@ do
 		return page
 	end
 	function page:CreateSection(...)
-		local section = section:new(self, ...)
+		local section = section:NewSection(self, ...)
 		table.insert(self.sections, section)
 		return section
 	end
