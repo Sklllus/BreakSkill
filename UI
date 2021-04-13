@@ -176,7 +176,7 @@ end
 --Classes
 
 local library = {} --Main
-local Sections = {}
+local Sections = {} --Sections
 
 do
     library.__index = library
@@ -294,3 +294,5 @@ do
         }, library)
     end
 end
+
+return library
