@@ -1,0 +1,296 @@
+--init
+local player = game.Players.LocalPlayer
+local mouse = player:GetMouse()
+
+--services
+local input = game:GetService("UserInputService")
+local run = game:GetService("RunService")
+local tween = game:GetService("TweenService")
+local tweeninfo = TweenInfo.new
+
+--additional
+local utility = {}
+
+--themes
+local objects = {}
+local Themes = {
+    MainBackground = Color3.fromRGB(30, 30, 30),
+    SectionsBackground = Color3.fromRGB(25, 25, 25),
+    TopBarBackground = Color3.fromRGB(20, 20, 20),
+    TextColor3 = Color3.fromRGB(255, 255, 255),
+
+}
+
+--Functions
+
+do
+    function utility:Create(instance, prop, children)
+        local object = Instance.new(instance)
+
+        for i, v in pairs(prop or {}) do
+            object[i] = v
+
+            if typeof(v) == "Color3" then --Save theme changer
+                local theme = utility:Find(Themes, v)
+
+                if theme then
+                    objects[theme] = objects[theme] or {}
+                    objects[theme][i] = objects[theme][i] or setmetatable({}, {_mode = "k"})
+                    table.insert(objects[theme][i], object)
+                end
+            end
+        end
+        for i, module in pairs(children or {}) do
+            module.Parent = object
+        end
+        return object
+    end
+    function utility:Tween(instance, prop, duration, ...)
+        tween:Create(instance, tweeninfo(duration, ...), prop):Play()
+    end
+    function utility:Wait()
+        run.RenderStepped:Wait()
+        return true
+    end
+    function utility:Find(table, val)
+        for i, v in pairs(table) do
+            if v == val then
+                return i
+            end
+        end
+    end
+    function utility:Sort(pattern, vals)
+        local new = {}
+        pattern = pattern:lower()
+
+        if pattern == "" then
+            return vals
+        end
+        for i, value in pairs(vals) do
+            if tostring(value):lower():find(pattern) then
+                table.insert(new, value)
+            end
+        end
+        return new
+    end
+    function utility:Pop(object, shrink)
+        local clone = object:Clone()
+        clone.AnchorPoint = Vector2.new(0.5, 0.5)
+        clone.Size = clone.Size - UDim2.new(0, shrink, 0, shrink)
+        clone.Position = UDim2.new(0.5, 0, 0.5, 0)
+        clone.Parent = object
+        clone:ClearAllChildren()
+        object.ImageTransparency = 1
+        utility:Tween(clone, {Size = object.Size}, 0.2)
+
+        spawn(function ()
+            wait(0.2)
+            object.ImageTransparency = 0
+            clone:Destroy()
+        end)
+        return clone
+    end
+    function utility:InitializeKeybind()
+        self.Keybinds = {}
+        self.Ended = {}
+
+        input.InputBegan:Connect(function (key)
+            if self.Keybinds[key.KeyCode] then
+                for i, bind in pairs(self.Keybinds[key.KeyCode]) do
+                    bind()
+                end
+            end
+        end)
+        input.InputEnded:Connect(function (key)
+            if key.UserInputType == Enum.UserInputType.MouseButton1 then
+                for i, callback in pairs(self.Ended) do
+                    callback()
+                end
+            end
+        end)
+    end
+    function utility:BindToKey(key, callback)
+        self.Keybinds[key] = self.Keybinds[key] or {}
+        table.insert(self.Keybinds[key], callback)
+
+        return {
+            UnBind = function ()
+                for i, bind in pairs(self.Keybinds[key]) do
+                    if bind == callback then
+                        table.remove(self.Keybinds[key], i)
+                    end
+                end
+            end
+        }
+    end
+    function utility:KeyPressed()
+        local key = input.InputBegan:Wait()
+
+        while key.UserInputType ~= Enum.UserInputType.Keyboard do
+            key = input.InputBegan:Wait()
+        end
+        wait() --Overlapping connection
+        return key
+    end
+    function utility:DraggingEnabled(frame, parent)
+        parent = parent or frame
+        local dragging = false
+        local dragInput, mousePos, framePos
+
+        frame.InputBegan:Connect(function (input)
+            if input.UserInputType == Enum.UserInputType.MouseButton1 then
+                dragging = true
+                mousePos = input.Position
+                framePos = parent.Position
+
+                input.Changed:Connect(function ()
+                    if input.UserInputState == Enum.UserInputState.End then
+                        dragging = false
+                    end
+                end)
+            end
+        end)
+        frame.InputChanged:Connect(function (input)
+            if input.UserInputType == Enum.UserInputType.MouseMovement then
+                dragInput = input
+            end
+        end)
+        input.InputChanged:Connect(function (input)
+            if input == dragInput and dragging then
+                local delta = input.Position - mousePos
+                parent.Position = UDim2.new(framePos.X.Scale, framePos.X.Offset + delta.X, framePos.Y.Scale, framePos.Y.Offset + delta.Y)
+            end
+        end)
+    end
+    function utility:DraggingEnded(callback)
+        table.insert(self.Ended, callback)
+    end
+    function utility:Resize(part, new, _delay)
+        _delay = _delay or 0.5
+        local xd = TweenInfo.new(_delay, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+        local xd1 = tween:Create(part, xd, new)
+        xd1:Play()
+    end
+end
+
+--Classes
+
+local library = {} --Main
+local Sections = {}
+
+do
+    library.__index = library
+    Sections.__index = Sections
+
+    --New Classes
+
+    function library:CreateWindow(title, version)
+        local container = utility:Create("ScreenGui", { --GUI
+            Name = title,
+            Parent = game.CoreGui
+        }, {
+            utility:Create("ImageLabel", { --Main
+                Name = "Main",
+                BackgroundTransparency = 1,
+                BorderSizePixel = 0,
+                Position = UDim2.new(0.258, 0, 0.135, 0),
+                Size = UDim2.new(0, 455, 0, 543),
+                Image = "rbxassetid://4641149554",
+                ImageColor3 = Themes.MainBackground,
+                ScaleType = Enum.ScaleType.Slice,
+                SliceCenter = Rect.new(4, 4, 296, 296),
+            }, {
+                utility:Create("ImageLabel", { --Sections
+                    Name = "Sections",
+                    ClipsDescendants = true,
+                    BackgroundTransparency = 1,
+                    BorderSizePixel = 0,
+                    Position = UDim2.new(0, 0, 543),
+                    Size = UDim2.new(0, 125, 0, -460),
+                    Image = "rbxassetid://5012534273",
+                    ImageColor3 = Themes.SectionsBackground,
+                    ScaleType = Enum.ScaleType.Slice,
+                    SliceCenter = Rect.new(4, 4, 296, 296),
+                    ZIndex = 3
+                }, {
+                    utility:Create("ScrollingFrame", {
+                        Name = "Container",
+                        BackgroundTransparency = 1,
+                        BorderSizePixel = 0,
+                        Position = UDim2.new(0, 0, 0, 10),
+                        Size = UDim2.new(1, 0, 1, -20),
+                        CanvasSize = UDim2.new(0, 0, 0, 314),
+                        ScrollBarThickness = 0,
+                        Active = true
+                    }, {
+                        utility:Create("UIListLayout", {
+                            SortOrder = Enum.SortOrder.LayoutOrder,
+                            Padding = UDim.new(0, 10)
+                        })
+                    })
+                }),
+                utility:Create("ImageLabel", { --TopBar
+                    Name = "TopBar",
+                    BackgroundTransparency = 1,
+                    BorderSizePixel = 0,
+                    Position = UDim2.new(0, 0, 0, 0),
+                    Size = UDim2.new(1, 0, 0.083, 38),
+                    ZIndex = 5,
+                    Image = "rbxassetid://4595286933",
+                    ImageColor3 = Themes.TopBarBackground,
+                    ScaleType = Enum.ScaleType.Slice,
+                    SliceCenter = Rect.new(4, 4, 296, 296),
+                }, {
+                    utility:Create("TextLabel", { --Title
+                        Name = "Title",
+                        AnchorPoint = Vector2.new(0, 0.5),
+                        BackgroundTransparency = 1,
+                        BorderSizePixel = 0,
+                        Position = UDim2.new(0, 11, 0, 20),
+                        Size = UDim2.new(0.336, -46, 0.151, 16),
+                        ZIndex = 5,
+                        Font = Enum.Font.SourceSansBold,
+                        Text = title,
+                        TextColor3 = Themes.TextColor3,
+                        TextSize = 16,
+                        TextXAlignment = Enum.TextXAlignment.Left
+                    }),
+                    utility:Create("TextLabel", {
+                        Name = "Version",
+                        BackgroundTransparency = 1,
+                        BorderSizePixel = 0,
+                        AnchorPoint = Vector2.new(0, 0.5),
+                        Position = UDim2.new(0.024, 0, 0.467, 0),
+                        Size = UDim2.new(0, 106, 0, 21),
+                        ZIndex = 5,
+                        Font = Enum.Font.SourceSansBold,
+                        Text = version,
+                        TextSize = 16,
+                        TextColor3 = Themes.TextColor3
+                    }),
+                    utility:Create("TextLabel", {
+                        Name = "Player",
+                        AnchorPoint = Vector2.new(0, 0.5),
+                        BackgroundTransparency = 1,
+                        BorderSizePixel = 0,
+                        Position = UDim2.new(0.024, 0, 0.691, 0),
+                        Size = UDim2.new(0, 114, 0, 16),
+                        ZIndex = 5,
+                        Font = Enum.Font.SourceSansBold,
+                        Text = player,
+                        TextColor3 = Themes.TextColor3,
+                        TextSize = 16
+                    })
+                })
+            })
+        })
+        utility:InitializeKeybind()
+        utility:DraggingEnabled(container.Main.TopBar, container.Main)
+
+        return setmetatable({
+            container = container,
+            sectionsContainer = container.Main.Sections.Container,
+            sections = {}
+        }, library)
+    end
+end
