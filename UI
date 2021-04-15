@@ -397,7 +397,7 @@ end
 function library:CreateWindow(csize, cpos)
 	ctitle = library.settings.title
 	local window = {xpos = 0, close = true, draggable = true}
-	table.insert(library.windows, window)
+	table.insert(self.windows, window)
 	
 	self.base = self.base or self:Create("ScreenGui", {
 		Name = library.settings.guiname,
