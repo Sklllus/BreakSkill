@@ -191,5 +191,11 @@ do
                 ZIndex = 1
             })
         })
+        utility:InitializeKeybind()
+        utility:DraggingEnabled(container.Main.TopBar, container.Main)
+
+        return setmetatable({
+            pages = {}
+        }, library)
     end
 end
