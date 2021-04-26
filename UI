@@ -20,7 +20,7 @@ local utility = {}
 local objects = {}
 
 local themes = {
-    Background = Color3.fromRGB(),
+    Background = Color3.fromRGB(16, 16, 16),
     Accent = Color3.fromRGB(),
     LightContrast = Color3.fromRGB(),
     DarkContrast = Color3.fromRGB(),
@@ -182,7 +182,14 @@ do
             Name = title,
             Parent = game.CoreGui
         }, {
-            utility:Create("")
+            utility:Create("Frame", {
+                Name = "Main",
+                BackgroundColor3 = themes.Background,
+                BorderSizePixel = 0,
+                Position = UDim2.new(0.355, 0, 0.192, 0),
+                Size = UDim2.new(0, 385, 0, 526),
+                ZIndex = 1
+            })
         })
     end
 end
