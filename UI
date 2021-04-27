@@ -169,33 +169,30 @@ end
 --Classes
 
 local library = {}
-local page = {}
-local section = {}
+local sections = {}
+local folders = {}
 
 do
     library.__index = library
-    page.__index = page
-    section.__index = section
+    sections.__index = sections
+    folders.__index = folders
 
     function library:CreateWindow(title)
         local container = utility:Create("ScreenGui", {
             Name = title,
             Parent = game.CoreGui
         }, {
-            utility:Create("Frame", {
+            utility:Create("ImageLabel", {
                 Name = "Main",
-                BackgroundColor3 = themes.Background,
-                BorderSizePixel = 0,
-                Position = UDim2.new(0.355, 0, 0.192, 0),
-                Size = UDim2.new(0, 385, 0, 526),
-                ZIndex = 1
+                BackgroundTransparency = 1,
+                Image = "rbxassetid://4641149554",
+                ImageColor3 = themes.Background,
+                ScaleType = Enum.ScaleType.Slice,
+                SliceCenter = Rect.new(4, 4, 296, 296),
+                Size = UDim2.new()
             })
         })
-        utility:InitializeKeybind()
-        utility:DraggingEnabled(container.Main.TopBar, container.Main)
-
-        return setmetatable({
-            pages = {}
-        }, library)
     end
 end
+
+return library
