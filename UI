@@ -407,6 +407,7 @@ function library:Create(GUITitle)
                 Tween(HiddenButton, {TextTransparency = 0})
             end)
         end
+        return PageLibrary
     end
     return TabLibrary
 end
