@@ -1,196 +1,378 @@
+---@diagnostic disable: unused-function
 --BreakSkill UI Library
 
 --Made By xS_Killus
 
---Instances
-
-local Client = game:GetService("Players").LocalPlayer
+local Client = game.Players.LocalPlayer
 local Mouse = Client:GetMouse()
-local input = game:GetService("UserInputService")
-local run = game:GetService("RunService")
-local tween = game:GetService("TweenService")
-local tweeninfo = TweenInfo.new
+local TweenService = game:GetService("TweenService")
+local UserInputService = game:GetService("UserInputService")
+local CoreGuiService = game:GetService("CoreGui")
+local RunService = game:GetService("RunService")
+local TextService = game:GetService("TextService")
+local TweenTime = 0.1
+local Level = 1
+local GlobalTweenInfo = TweenInfo.new(TweenTime)
+local AlteredTweenInfo = TweenInfo.new(TweenTime, Enum.EasingStyle.Sine, Enum.EasingDirection.Out)
+local DropShadowID = "rbxassetid://297774371"
+local DropShadowTransparency = 0.3
+local IconLibraryID = "rbxassetid://3926305904"
+local IconLibraryID2 = "rbxassetid://3926307971"
+local MainFont = Enum.Font.SourceSansBold
 
---Util
-
-local utility = {}
-
---Theme
-
-local objects = {}
-
-local themes = {
-    Background = Color3.fromRGB(16, 16, 16),
-    Accent = Color3.fromRGB(),
-    LightContrast = Color3.fromRGB(),
-    DarkContrast = Color3.fromRGB(),
-    TextColor = Color3.fromRGB()
-}
-
-do
-    function utility:Create(instance, prop, children)
-        local object = Instance.new(instance)
-
-        for i, v in pairs(prop or {}) do
-            object[i] = v
-
-            if typeof(v) == "Color3" then
-                local theme = utility:Find(themes, v)
-
-                if theme then
-                    objects[theme] = objects[theme] or {}
-                    objects[theme][i] = objects[theme][i] or setmetatable({}, {_mode = "k"})
-                    table.insert(objects[theme][i], object)
-                end
-            end
-        end
-        for i, module in pairs(children or {}) do
-            module.Parent = object
-        end
-        return object
-    end
-    function utility:Tween(instance, prop, duration, ...)
-        tween:Create(instance, tweeninfo(duration, ...), prop):Play()
-    end
-    function utility:Wait()
-        run.RenderStepped:Wait()
-        return true
-    end
-    function utility:Find(table, val)
-        for i, v in pairs(table) do
-            if v == val then
-                return i
-            end
-        end
-    end
-    function utility:Sort(pattern, vals)
-        local new = {}
-        pattern = pattern:lower()
-
-        if pattern == "" then
-            return vals
-        end
-        for i, val in pairs(vals) do
-            if tostring(val):lower():find(pattern) then
-                table.insert(new, val)
-            end
-        end
-        return new
-    end
-    function utility:Pop(object, shrink)
-        local clone = object:Clone()
-        clone.AnchorPoint = Vector2.new(0.5, 0.5)
-        clone.Size = clone.Size - UDim2.new(0, shrink, 0, shrink)
-        clone.Position = UDim2.new(0.5, 0, 0.5, 0)
-        clone.Parent = object
-        clone:ClearAllChildren()
-        object.ImageTransparency = 1
-        utility:Tween(clone, {Size = object.Size}, 0.2)
-
-        spawn(function ()
-            wait(0.2)
-            object.ImageTransparency = 0
-            clone:Destroy()
-        end)
-        return clone
-    end
-    function utility:InitializeKeybind()
-        self.keybinds = {}
-        self.ended = {}
-
-        input.InputBegan:Connect(function (key)
-            if self.keybinds[key.KeyCode] then
-                for i, bind in pairs(self.keybinds[key.KeyCode]) do
-                    bind()
-                end
-            end
-        end)
-        input.InputEnded:Connect(function (key)
-            if key.UserInputType == Enum.UserInputType.MouseButton1 then
-                for i, callback in pairs(self.ended) do
-                    callback()
-                end
-            end
-        end)
-    end
-    function utility:BindToKey(key, callback)
-        self.keybinds[key] = self.keybinds[key] or {}
-        table.insert(self.keybinds[key], callback)
-
-        return {
-            UnBind = function ()
-                for i, bind in pairs(self.keybinds[key]) do
-                    if bind == callback then
-                        table.remove(self.keybinds[key], i)
-                    end
-                end
-            end
-        }
-    end
-    function utility:KeyPressed()
-        local key = input.InputBegan:Wait()
-
-        while key.UserInputType ~= Enum.UserInputType.Keyboard do
-            key = input.InputBegan:Wait()
-        end
-        wait()
-        return key
-    end
-    function utility:DraggingEnabled(frame, parent)
-        parent = parent or frame
-        local dragging = false
-        local dragInput, mousePos, framePos
-
-        frame.InputBegan:Connect(function (input)
-            if input.UserInputType == Enum.UserInputType.MouseButton1 then
-                dragging = true
-                mousePos = input.Position
-                framePos = parent.Position
-
-                input.Changed:Connect(function ()
-                    if input.UserInputState == Enum.UserInputState.End then
-                        dragging = false
-                    end
-                end)
-            end
-        end)
-        frame.InputChanged:Connect(function (input)
-            if input == dragInput and dragging then
-                local delta = input.Position - mousePos
-                parent.Position = UDim2.new(framePos.X.Scale, framePos.X.Offset + delta.X, framePos.Y.Scale, framePos.Y.Offset + delta.Y)
-            end
-        end)
-    end
-    function utility:DraggingEnded(callback)
-        table.insert(self.ended, callback)
-    end
+local function GetXY(guiObject)
+    local X, Y = Mouse.X - guiObject.AbsolutePosition.X, Mouse.Y - guiObject.AbsolutePosition.Y
+    local MaxX, MaxY = guiObject.AbsoluteSize.X, guiObject.AbsoluteSize.Y
+    X, Y = math.clamp(X, 0, MaxX), math.clamp(Y, 0, MaxY)
+    return X, Y, X / MaxX, Y / MaxY
 end
 
---Classes
+local function TitleIcon(buttonOrNot)
+    local NewTitleIcon = Instance.new(buttonOrNot and "ImageButton" or "ImageLabel")
+    NewTitleIcon.Name = "TitleIcon"
+    NewTitleIcon.BackgroundTransparency = 1
+    NewTitleIcon.Image = IconLibraryID
+    NewTitleIcon.ImageRectOffset = Vector2.new(524, 764)
+    NewTitleIcon.ImageRectSize = Vector2.new(36, 36)
+    NewTitleIcon.Size = UDim2.new(0, 14, 0, 14)
+    NewTitleIcon.Position = UDim2.new(1, -17, 0, 3)
+    NewTitleIcon.Rotation = 180
+    NewTitleIcon.ZIndex = Level
+    return NewTitleIcon
+end
+
+local function TickIcon(buttonOrNot)
+    local NewTickIcon = Instance.new(buttonOrNot and "ImageButton" or "ImageLabel")
+    NewTickIcon.Name = "TickIcon"
+    NewTickIcon.BackgroundTransparency = 1
+    NewTickIcon.Image = "rbxassetid://3926305904"
+    NewTickIcon.ImageRectOffset = Vector2.new(312, 4)
+    NewTickIcon.ImageRectSize = Vector2.new(24, 24)
+    NewTickIcon.Size = UDim2.new(1, -6, 1, -6)
+    NewTickIcon.Position = UDim2.new(0, 3, 0, 3)
+    NewTickIcon.ZIndex = Level
+    return NewTickIcon
+end
+
+local function DropdownIcon(buttonOrNot)
+    local NewDropdownIcon = Instance.new(buttonOrNot and "ImageButton" or "ImageLabel")
+    NewDropdownIcon.Name = "DropdownIcon"
+    NewDropdownIcon.BackgroundTransparency = 1
+    NewDropdownIcon.Image = IconLibraryID2
+    NewDropdownIcon.ImageRectOffset = Vector2.new(324, 364)
+    NewDropdownIcon.ImageRectSize = Vector2.new(36, 36)
+    NewDropdownIcon.Size = UDim2.new(0, 16, 0, 16)
+    NewDropdownIcon.Position = UDim2.new(1, -18, 0, 2)
+    NewDropdownIcon.ZIndex = Level
+    return NewDropdownIcon
+end
+
+local function SearchIcon(buttonOrNot)
+    local NewSearchIcon = Instance.new(buttonOrNot and "ImageButton" or "ImageLabel")
+    NewSearchIcon.Name = "SearchIcon"
+    NewSearchIcon.BackgroundTransparency = 1
+    NewSearchIcon.Image = IconLibraryID
+    NewSearchIcon.ImageRectOffset = Vector2.new(964, 324)
+    NewSearchIcon.ImageRectSize = Vector2.new(36, 36)
+    NewSearchIcon.Size = UDim2.new(0, 16, 0, 16)
+    NewSearchIcon.Position = UDim2.new(0, 2, 0, 2)
+    NewSearchIcon.ZIndex = Level
+    return NewSearchIcon
+end
+
+local function RoundBox(cornerRadius, buttonOrNot)
+    local NewRoundBox = Instance.new(buttonOrNot and "ImageButton" or "ImageLabel")
+    NewRoundBox.BackgroundTransparency = 1
+    NewRoundBox.Image = "rbxassetid://3570695787"
+    NewRoundBox.SliceCenter = Rect.new(100, 100, 100, 100)
+    NewRoundBox.SliceScale = math.clamp((cornerRadius or 5) * 0.01, 0.01, 1)
+    NewRoundBox.ScaleType = Enum.ScaleType.Slice
+    NewRoundBox.ZIndex = Level
+    return NewRoundBox
+end
+
+local function DropShadow()
+    local NewDropShadow = Instance.new("ImageLabel")
+    NewDropShadow.Name = "DropShadow"
+    NewDropShadow.BackgroundTransparency = 1
+    NewDropShadow.Image = DropShadowID
+    NewDropShadow.ImageTransparency = DropShadowTransparency
+    NewDropShadow.Size = UDim2.new(1, 0, 1, 0)
+    NewDropShadow.ZIndex = Level
+    return NewDropShadow
+end
+
+local function Frame()
+    local NewFrame = Instance.new("Frame")
+    NewFrame.BorderSizePixel = 0
+    NewFrame.ZIndex = Level
+    return NewFrame
+end
+
+local function ScrollingFrame()
+    local NewScrollingFrame = Instance.new("ScrollingFrame")
+    NewScrollingFrame.BackgroundTransparency = 1
+    NewScrollingFrame.BorderSizePixel = 0
+    NewScrollingFrame.ScrollBarThickness = 0
+    NewScrollingFrame.ZIndex = Level
+    return NewScrollingFrame
+end
+
+local function TextButton(text, size)
+    local NewTextButton = Instance.new("TextButton")
+    NewTextButton.Text = text
+    NewTextButton.AutoButtonColor = false
+    NewTextButton.Font = MainFont
+    NewTextButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+    NewTextButton.BackgroundTransparency = 1
+    NewTextButton.TextSize = size or 12
+    NewTextButton.Size = UDim2.new(1, 0, 1, 0)
+    NewTextButton.ZIndex = Level
+    return NewTextButton
+end
+
+local function TextBox(text, size)
+    local NewTextBox = Instance.new("TextBox")
+    NewTextBox.Text = text
+    NewTextBox.Font = MainFont
+    NewTextBox.TextColor3 = Color3.fromRGB(255, 255, 255)
+    NewTextBox.TextSize = size or 12
+    NewTextBox.Size = UDim2.new(1, 0, 1, 0)
+    NewTextBox.ZIndex = Level
+    return NewTextBox
+end
+
+local function TextLabel(text, size)
+    local NewTextLabel = Instance.new("TextLabel")
+    NewTextLabel.Text = text
+    NewTextLabel.Font = MainFont
+    NewTextLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+    NewTextLabel.BackgroundTransparency = 1
+    NewTextLabel.TextSize = size or 12
+    NewTextLabel.Size = UDim2.new(1, 0, 1, 0)
+    NewTextLabel.ZIndex = Level
+    return NewTextLabel
+end
+
+local function Tween(guiObject, dictionary)
+    local TweenBase = TweenService:Create(guiObject, GlobalTweenInfo, dictionary)
+    TweenBase:Play()
+    return TweenBase
+end
 
 local library = {}
-local sections = {}
-local folders = {}
 
-do
-    library.__index = library
+function library:Create(guiTitle)
+    local TargetedParent = RunService:IsStudio() and Client:WaitForChild("PlayerGui") or CoreGuiService
+    local FindOldInstance = TargetedParent:FindFirstChild("guiTitle")
 
-    function library:CreateWindow(title)
-        local container = utility:Create("ScreenGui", {
-            Name = title,
-            Parent = game.CoreGui
-        }, {
-            utility:Create("ImageLabel", {
-                Name = "Main",
-                BackgroundTransparency = 1,
-                Image = "rbxassetid://4641149554",
-                ImageColor3 = themes.Background,
-                ScaleType = Enum.ScaleType.Slice,
-                SliceCenter = Rect.new(4, 4, 296, 296),
-                Size = UDim2.new()
-            })
-        })
+    if FindOldInstance then
+        FindOldInstance:Destroy()
     end
+    local NewInstance, ContainerFrame, ContainerShadow, MainFrame
+
+    NewInstance = Instance.new("ScreenGui")
+    NewInstance.Name = guiTitle
+    NewInstance.Parent = TargetedParent
+
+    ContainerFrame = Frame()
+    ContainerFrame.Name = "ContainerFrame"
+    ContainerFrame.Size = UDim2.new(0, 500, 0, 300)
+    ContainerFrame.Position = UDim2.new(0.5, -250, 0.5, -150)
+    ContainerFrame.BackgroundTransparency = 1
+    ContainerFrame.Parent = NewInstance
+
+    ContainerShadow = DropShadow()
+    ContainerShadow.Name = "Shadow"
+    ContainerShadow.Parent = ContainerFrame
+
+    Level += 1
+    
+    MainFrame = RoundBox(5)
+    MainFrame.ClipsDescendants = true
+    MainFrame.Name = "MainFrame"
+    MainFrame.Size = UDim2.new(1, -50, 1, -30)
+    MainFrame.Position = UDim2.new(0, 25, 0, 15)
+    MainFrame.ImageColor3 = Color3.fromRGB(30, 30, 30)
+    MainFrame.Parent = ContainerFrame
+
+    local MenuBar, DisplayFrame, TitleBar
+
+    MenuBar = ScrollingFrame()
+    MenuBar.Name = "MenuBar"
+    MenuBar.BackgroundTransparency = 0.7
+    MenuBar.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+    MenuBar.Size = UDim2.new(0, 100, 0, 235)
+    MenuBar.Position = UDim2.new(0, 5, 0, 30)
+    MenuBar.CanvasSize = UDim2.new(0, 0, 0, 0)
+    MenuBar.Parent = MainFrame
+
+    DisplayFrame = RoundBox(5)
+    DisplayFrame.Name = "Display"
+    DisplayFrame.ImageColor3 = Color3.fromRGB(20, 20, 20)
+    DisplayFrame.Size = UDim2.new(1, -115, 0, 235)
+    DisplayFrame.Position = UDim2.new(0, 110, 0, 30)
+    DisplayFrame.Parent = MainFrame
+
+    TitleBar = RoundBox(5)
+    TitleBar.Name = "TitleBar"
+    TitleBar.ImageColor3 = Color3.fromRGB(40, 40, 40)
+    TitleBar.Size = UDim2.new(1, -10, 0, 20)
+    TitleBar.Position = UDim2.new(0, 5, 0, 5)
+    TitleBar.Parent = MainFrame
+
+    Level += 1
+
+    local MinimiseButton, TitleButton
+    local MinimiseToggle = true
+
+    MinimiseButton = TitleIcon(true)
+    MinimiseButton.Name = "Minimise"
+    MinimiseButton.Parent = TitleBar
+    
+    TitleButton = TextButton(guiTitle, 14)
+    TitleButton.Name = "TitleButton"
+    TitleButton.Size = UDim2.new(1, -20, 1, 0)
+    TitleButton.Parent = TitleBar
+
+    MinimiseButton.MouseButton1Down:Connect(function ()
+        MinimiseToggle = not MinimiseToggle
+
+        if not MinimiseToggle then
+            Tween(MainFrame, {Size = UDim2.new(1, -50, 0, 30)})
+            Tween(MinimiseButton, {Rotation = 0})
+            Tween(ContainerShadow, {ImageTransparency = 1})
+        else
+            Tween(MainFrame, {Size = UDim2.new(1, -50, 1, -30)})
+            Tween(MinimiseButton, {Rotation = 180})
+            Tween(ContainerShadow, {ImageTransparency = DropShadowTransparency})
+        end
+    end)
+    TitleButton.MouseButton1Down:Connect(function ()
+        local LastMX, LastMY = Mouse.X, Mouse.Y
+        local Move, Kill
+
+        Move = Mouse.Move:Connect(function ()
+            local NewMX, NewMY = Mouse.X, Mouse.Y
+            local DX, DY = NewMX - LastMX, NewMX - LastMY
+            ContainerFrame.Position += UDim2.new(0, DX, 0, DY)
+            LastMX, LastMY = NewMX, NewMY
+        end)
+        Kill = UserInputService.InputEnded:Connect(function (input)
+            if input.UserInputType == Enum.UserInputType.MouseButton1 then
+                Move:Disconnect()
+                Kill:Disconnect()
+            end
+        end)
+    end)
+    Level += 1
+
+    local MenuListLayout
+
+    MenuListLayout = Instance.new("UIListLayout")
+    MenuListLayout.SortOrder = Enum.SortOrder.LayoutOrder
+    MenuListLayout.Padding = UDim.new(0, 5)
+    MenuListLayout.Parent = MenuBar
+
+    local TabCount = 0
+
+    local TabLibrary = {}
+
+    function TabLibrary:CreatePage(pageTitle, SearchBarIncluded)
+        local SearchBarIncluded = (SearchBarIncluded == nil) and true or SearchBarIncluded
+        
+        local PageContainer = RoundBox(5)
+        PageContainer.Name = pageTitle
+        PageContainer.Size = UDim2.new(1, 0, 0, 20)
+        PageContainer.LayoutOrder = TabCount
+        PageContainer.ImageColor3 = (TabCount == 0) and Color3.fromRGB(50, 50, 50) or Color3.fromRGB(40, 40, 40)
+        PageContainer.Parent = MenuBar
+
+        local PageButton = TextButton(pageTitle, 14)
+        PageButton.Name = pageTitle.."Button"
+        PageButton.TextTransparency = (TabCount == 0) and 0 or 0.5
+        PageButton.Parent = PageContainer
+
+        PageButton.MouseButton1Down:Connect(function ()
+            spawn(function ()
+                for _, Button in next, MenuBar:GetChildren() do
+                    if Button:IsA("GuiObject") then
+                        local IsButton = string.find(Button.Name:lower(), PageContainer.Name:lower())
+                        local Button2 = Button:FindFirstChild(Button.Name.."Button")
+                        Tween(Button, {ImageColor3 = IsButton and Color3.fromRGB(50, 50, 50) or Color3.fromRGB(40, 40, 40)})
+                        Tween(Button2, {TextTransparency = IsButton and 0 or 0.5})
+                    end
+                end
+            end)
+            spawn(function ()
+                for _, Display in next, DisplayFrame:GetChildren() do
+                    if Display:IsA("GuiObject") then
+                        Display.Visible = string.find(Display.Name:lower(), PageContainer.Name:lower())
+                    end
+                end
+            end)
+        end)
+        local DisplayPage = ScrollingFrame()
+        DisplayPage.Visible = (TabCount == 0)
+        DisplayPage.Name = pageTitle
+        DisplayPage.Size = UDim2.new(1, 0, 1, 0)
+        DisplayPage.Parent = DisplayFrame
+
+        TabCount += 1
+
+        local DisplayList = Instance.new("UIListLayout")
+        DisplayList.SortOrder = Enum.SortOrder.LayoutOrder
+        DisplayList.Padding = UDim.new(0, 5)
+        DisplayList.Parent = DisplayPage
+
+        DisplayList:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function ()
+            local Y1 = DisplayList.AbsoluteContentSize.Y
+            local Y2 = DisplayPage.AbsoluteWindowSize.Y
+            DisplayPage.CanvasSize = UDim2.new(0, 0, (Y1 / Y2) + 0.05, 0)
+        end)
+        local DisplayPadding = Instance.new("UIPadding")
+        DisplayPadding.PaddingBottom = UDim.new(0, 5)
+        DisplayPadding.PaddingTop = UDim.new(0, 5)
+        DisplayPadding.PaddingLeft = UDim.new(0, 5)
+        DisplayPadding.PaddingRight = UDim.new(0, 5)
+        DisplayPadding.Parent = DisplayPage
+
+        if SearchBarIncluded then
+            local SearchBarContainer = RoundBox(5)
+            SearchBarContainer.Name = "SearchBar"
+            SearchBarContainer.ImageColor3 = Color3.fromRGB(35, 35, 35)
+            SearchBarContainer.Size = UDim2.new(1, 0, 0, 20)
+            SearchBarContainer.Parent = DisplayPage
+
+            local SearchBox = TextBox("Search...")
+            SearchBox.Name = "SearchInput"
+            SearchBox.Position = UDim2.new(0, 20, 0, 0)
+            SearchBox.Size = UDim2.new(1, -20, 1, 0)
+            SearchBox.TextTransparency = 0.5
+            SearchBox.TextXAlignment = Enum.TextXAlignment.Left
+            SearchBox.Parent = SearchBarContainer
+
+            local SearchIcon = SearchIcon()
+            SearchIcon.Parent = SearchBarContainer
+
+            SearchBox:GetPropertyChangedSignal("Text"):Connect(function ()
+                local NewValue = SearchBox.Text
+
+                for _, Element in next, DisplayPage:GetChildren() do
+                    if Element:IsA("Frame") then
+                        if not string.find(Element.Name:lower(), "label") then
+                            if string.find(Element.Name:lower(), NewValue:lower()) then
+                                Element.Visible = true
+                            else
+                                Element.Visible = false
+                            end
+                        end
+                    end
+                end
+            end)
+        end
+    end
+    return TabLibrary
 end
 
 return library
