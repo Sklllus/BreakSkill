@@ -510,7 +510,7 @@ function library:Create(GUITitle)
 			SliderFill.ImageTransparency = 0.7
 			SliderFill.Parent = SliderButton
 
-			SliderButton.MouseButton1Down:Connect(function ()
+			SliderButton.MouseButton1Down:Connect(function()
 				Tween(SliderFill, {ImageTransparency = 0.5})
 				local X, Y, XScale, YScale = GetXY(SliderButton)
 				local Value = math.floor(Minimum + ((Maximum - Minimum) * XScale))
@@ -529,8 +529,8 @@ function library:Create(GUITitle)
 					local TargetSize = UDim2.new(XScale, 0, 1, 0)
 					Tween(SliderFill, {Size = TargetSize})
 				end)
-				SliderKill = UserInputService.InputEnded:Connect(function (userinput)
-					if userinput.UserInputType == Enum.UserInputType.MouseButton1 then
+				SliderKill = UserInputService.InputEnded:Connect(function(UserInput)
+					if UserInput.UserInputType == Enum.UserInputType.MouseButton1 then
 						Tween(SliderFill, {ImageTransparency = 0.7})
 						SliderMove:Disconnect()
 						SliderKill:Disconnect()
@@ -539,7 +539,7 @@ function library:Create(GUITitle)
 			end)
 		end
 
-        function PageLibrary:AddColorPicker(Text, DefaultColor, callback)
+        function PageLibrary:CreateColorPicker(Text, DefaultColor, callback)
             local DefaultColor = DefaultColor or Color3.fromRGB(255, 255, 255)
 
             local ColorDictionary = {
