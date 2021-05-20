@@ -782,6 +782,112 @@ function library:Create(Config)
 	local TabLibrary = {}
 	local ButtonTrack = {}
 	local PageTrack = {}
+
+	function TabLibrary:CreateBanner(BannerConfig)
+		local BannerText = BannerConfig.Text
+		local BannerOptions = BannerConfig.Options or {}
+
+		local ExistingBanner, ExistingBannerOverlay = MainFrame:FindFirstChild("BannerOverlay"), MainFrame:FindFirstChild("Banner")
+
+		if ExistingBanner then
+			ExistingBanner:Destroy()
+		end
+		if ExistingBannerOverlay then
+			ExistingBannerOverlay:Destroy()
+		end
+		local BannerOverlay = Objects.new("Frame")
+		BannerOverlay.Name = "BannerOverlay"
+		BannerOverlay.BackgroundColor3 = Theme.BannerAccent
+		BannerOverlay.Size = UDim2.fromScale(1, 1) - UDim2.fromOffset(0, 30)
+		BannerOverlay.Position = UDim2.fromOffset(0, 30)
+		BannerOverlay.ZIndex = 75
+		BannerOverlay.Parent = MainFrame
+
+		local TextSize = TextService:GetTextSize(BannerText, 12, Enum.Font.Gotham, Vector2.new(0,0)).X
+		local Lines = math.ceil((TextSize) / (MainFrame.AbsoluteSize.X - 10))
+
+		local BannerSize = UDim2.fromScale(1, 0) + UDim2.fromOffset(-10, (Lines * 20) + 40)
+		local BannerPosition = UDim2.fromScale(0, 1) + UDim2.fromOffset(5, (-Lines * 20) - 45)
+
+		local Banner = Objects.new("Round")
+		Banner.Name = "Banner"
+		Banner.ImageTransparency = 1
+		Banner.ImageColor3 = Theme.Banner
+		Banner.Size = BannerSize
+		Banner.Position = BannerPosition
+		Banner.ZIndex = 80
+		Banner.Parent = MainFrame
+
+		local BannerLabel = Objects.new("Label")
+		BannerLabel.Name = "Value"
+		BannerLabel.Text = BannerText
+		BannerLabel.TextColor3 = Theme.BannerAccent
+		BannerLabel.TextSize = 12
+		BannerLabel.Font = Enum.Font.Gotham
+		BannerLabel.Size = UDim2.fromScale(1, 0) + UDim2.fromOffset(-5, (Lines * 20) + 5)
+		BannerLabel.TextWrapped = true
+		BannerLabel.Position = UDim2.fromOffset(5, 0)
+		BannerLabel.TextTransparency = 1
+		BannerLabel.ZIndex = 80
+		BannerLabel.Parent = Banner
+
+		TweenService:Create(BannerOverlay, TweenInfo.new(0.5), {BackgroundTransparency = 0.5}):Play()
+		TweenService:Create(Banner, TweenInfo.new(0.5), {ImageTransparency = 0}):Play()
+		TweenService:Create(BannerLabel, TweenInfo.new(0.5), {TextTransparency = 0}):Play()
+
+		local BannerContainer = Objects.new("Frame")
+		BannerContainer.Name = "Options"
+		BannerContainer.Size = UDim2.fromScale(1, 0) + UDim2.fromOffset(-10, 0)
+		BannerContainer.Position = UDim2.fromScale(0, 1) - UDim2.fromOffset(-5, 35)
+		BannerContainer.ZIndex = 80
+		BannerContainer.ClipsDescendants = true
+		BannerContainer.Parent = Banner
+
+		local BannerList = Objects.new("UIListLayout")
+		BannerList.FillDirection = Enum.FillDirection.Horizontal
+		BannerList.HorizontalAlignment = Enum.HorizontalAlignment.Right
+		BannerList.SortOrder = Enum.SortOrder.LayoutOrder
+		BannerList.Padding = UDim.new(0, 5)
+		BannerList.Parent = BannerContainer
+
+		BannerOptions["Ok"] = function()
+			TweenService:Create(BannerContainer, TweenInfo.new(0.5), {Size = UDim2.fromScale(1, 0) + UDim2.fromOffset(-10, 0)}):Play()
+			TweenService:Create(BannerOverlay, TweenInfo.new(0.5), {BackgroundTransparency = 1}):Play()
+			TweenService:Create(Banner, TweenInfo.new(0.5), {ImageTransparency = 1}):Play()
+			TweenService:Create(BannerLabel, TweenInfo.new(0.5), {TextTransparency = 1}):Play()
+		end
+		table.foreach(BannerOptions, function(Option, Value)
+			if typeof(Value) == "function" then
+				local TextSize = TextService:GetTextSize(Option:upper(), 12, Enum.Font.GothamBold, Vector2.new(0, 0)).X
+
+				local OptionItem = Objects.new("SmoothButton")
+				OptionItem.ImageColor3 = Theme.BannerAccent
+				OptionItem.ImageTransparency = 0.9
+				OptionItem.Size = UDim2.fromOffset(TextSize + 10, 30)
+				OptionItem.ZIndex = 80
+				OptionItem.ClipsDescendants = true
+				OptionItem.Parent = BannerContainer
+
+				local OptionLabel = Objects.new("Label")
+				OptionLabel.Text = Option:upper()
+				OptionLabel.TextSize = 12
+				OptionLabel.TextColor3 = Theme.BannerAccent
+				OptionLabel.Font = Enum.Font.GothamBold
+				OptionLabel.Size = UDim2.fromScale(1, 1)
+				OptionLabel.Position = UDim2.fromScale(0, 0)
+				OptionLabel.TextXAlignment = Enum.TextXAlignment.Center
+				OptionLabel.ZIndex = 80
+				OptionLabel.Parent = OptionItem
+
+				OptionItem.MouseButton1Down:Connect(function()
+					Value()
+					CircleAnim(OptionItem, Theme.Banner)
+				end)
+			end
+		end)
+		TweenService:Create(BannerContainer, TweenInfo.new(0.5), {Size = UDim2.fromScale(1, 0) + UDim2.fromOffset(-10, 30)}):Play()
+	end
+	return TabLibrary
 end
 
 return library
