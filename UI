@@ -887,6 +887,115 @@ function library:Create(Config)
 		end)
 		TweenService:Create(BannerContainer, TweenInfo.new(0.5), {Size = UDim2.fromScale(1, 0) + UDim2.fromOffset(-10, 30)}):Play()
 	end
+	function TabLibrary:CreateTab(TabConfig)
+		local ImageID = TabConfig.ID
+		local Title = TabConfig.Title
+		local Button
+
+		if ImageID then
+			if Title then
+				local Settings = {
+					TextSize = 12,
+					Font = Enum.Font.GothamBold,
+					Vector = Vector2.new(0, 0)
+				}
+				local TextSize = TextService:GetTextSize(Title:upper(), Settings.TextSize, Settings.Font, Settings.Vector).X
+
+				Button = Objects.new("Button")
+				Button.Name = Title:upper()
+				Button.TextXAlignment = Enum.TextXAlignment.Right
+				Button.TextSize = Settings.TextSize
+				Button.Font = Settings.Font
+				Button.Text = Title:upper()
+				Button.Size = UDim2.fromScale(0, 1) + UDim2.fromOffset(TextSize + 35)
+				Button.ZIndex = 200
+				Button.TextTransparency = 1
+			end
+			local FetchURL = "rbxassetid://"..ImageID
+			local Image = RunService:IsStudio() and "http://www.roblox.com/asset/?id=5472131383" or game:GetObjects(FetchURL)[1].Texture
+
+			local NewImage = Objects.new(Button and "Round" or "SmoothButton")
+			NewImage.Name = ImageID
+			NewImage.BackgroundTransparency = 1
+			NewImage.Size = UDim2.fromOffset(20, 20)
+			NewImage.ScaleType = Enum.ScaleType.Stretch
+			NewImage.Image = Image
+			NewImage.ZIndex = 200
+			NewImage.ImageTransparency = 1
+
+			if Button then
+				NewImage.Position = UDim2.fromScale(0, 0.5) - UDim2.fromOffset(0, 10)
+				NewImage.Parent = Button
+			else
+				Button = NewImage
+			end
+		else
+			local Settings = {
+				TextSize = 12,
+				Font = Enum.Font.GothamBold,
+				Vector = Vector2.new(0, 0)
+			}
+			local TextSize = TextService:GetTextSize(Title:upper(), Settings.TextSize, Settings.Font, Settings.Vector).X
+			Button = Objects.new("Button")
+			Button.Name = Title:upper()
+			Button.TextXAlignment = Enum.TextXAlignment.Center
+			Button.TextSize = Settings.TextSize
+			Button.Font = Settings.Font
+			Button.Text = Title:upper()
+			Button.Size = UDim2.fromScale(0, 1) + UDim2.fromOffset(TextSize + 10)
+			Button.ZIndex = 200
+			Button.TextTransparency = 1
+		end
+		Button.Parent = NavigationBarContent
+
+		local PageContentFrame = Objects.new("Scroll")
+		PageContentFrame.Name = Title:upper() or ImageID
+		PageContentFrame.Visible = (TabCount == 0)
+		PageContentFrame.ZIndex = 50
+		PageContentFrame.Parent = Content
+
+		table.insert(ButtonTrack, Button)
+		table.insert(PageTrack, PageContentFrame)
+
+		Button.MouseButton1Down:Connect(function()
+			for _, Track in next, ButtonTrack do
+				if not (Track == Button) then
+					TweenService:Create(Track, TweenInfo.new(0.15), {TextTransparency = 0.5}):Play()
+
+					pcall(function()
+						TweenService:Create(Track:FindFirstChildWhichIsA("ImageLabel"), TweenInfo.new(0.15), {ImageTransparency = 0.5}):Play()
+					end)
+				else
+					TweenService:Create(Track, TweenInfo.new(0.15), {TextTransparency = 0}):Play()
+
+					pcall(function()
+						TweenService:Create(Track:FindFirstChildWhichIsA("ImageLabel"), TweenInfo.new(0.15), {ImageTransparency = 0}):Play()
+					end)
+				end
+			end
+			for _, Track in next, PageTrack do
+				Track.Visible = (Track == PageContentFrame)
+			end
+		end)
+		local PagePadding = Objects.new("UIPadding")
+		PagePadding.PaddingLeft = UDim.new(0, 5)
+		PagePadding.PaddingRight = UDim.new(0, 5)
+		PagePadding.PaddingTop = UDim.new(0, 5)
+		PagePadding.PaddingBottom = UDim.new(0, 5)
+		PagePadding.Parent = PageContentFrame
+
+		local PageList = Objects.new("UIListLayout")
+		PageList.SortOrder = Enum.SortOrder.LayoutOrder
+		PageList.Padding = UDim.new(0, 5)
+		PageList.Parent = PageContentFrame
+
+		PageList:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
+			PageContentFrame.CanvasSize = UDim2.fromOffset(0, PageList.AbsoluteContentSize.Y + 10)
+		end)
+		TabCount = TabCount + 1
+		local OptionLibrary = {}
+	end
+
 	return TabLibrary
 end
 
