@@ -994,8 +994,20 @@ function library:Create(Config)
 		end)
 		TabCount = TabCount + 1
 		local OptionLibrary = {}
-	end
 
+		function OptionLibrary:CreateButton(ButtonConfig)
+			local NewButton, ButtonLabel = CreateNewButton(ButtonConfig, PageContentFrame)
+			local ButtonLibrary = {}
+
+			function ButtonLibrary:SetText(val)
+				ButtonLabel.Text = val
+			end
+			function ButtonLibrary:GetText()
+				return ButtonLabel.Text
+			end
+			return ButtonLibrary
+		end
+	end
 	return TabLibrary
 end
 
